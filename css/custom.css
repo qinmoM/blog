@@ -1,3 +1,28 @@
+/* body {
+    background: url('../../themes/butterfly/source/img/NBeyLj.png');
+    background-size: cover;
+} */
+
+/* #post {
+    background: transparent !important;
+} */
+
+/* #post-info {
+    background: rgba(0, 0, 0, 0.3);
+    display: block;
+    max-width: calc(90% - 60px);
+    padding: 20px 30px;
+    border-radius: 12px;
+    margin: 0 auto;
+} */
+
+#post-info {
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.4);
+    /* border-radius: 15px; */
+    padding: 20px;
+}
+
 /* footer and header transparent */
 #footer {
     background: transparent !important;
@@ -9,8 +34,7 @@
 #article-container figure.highlight {
     border-radius: 10px;
 }
-
-/* write mode transparent
+/* white mode transparent
 #footer::before {
     background: transparent !important;
 }
