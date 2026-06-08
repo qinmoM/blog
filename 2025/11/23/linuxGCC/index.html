@@ -1,0 +1,336 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Linux系统编程（五）GCC | QinmoM's Blog</title><meta name="author" content="qinmoM"><meta name="copyright" content="qinmoM"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="b站：满目星何x  前言 编译器将高级计算机语言翻译为低级机器语言的程序。 gcc原本为GNU开发的套件，现在已经被多出Unix系统采纳为标准编译器。  基础基本格式gcc&#x2F;g++ [option] file …  命令，选项，源文件之间用空格分割。 一行命令可以有 0~多个 选项。 文件名可以是绝对路径和相对路径。 命令如果不包含可执行文件的文件名，Linux会默认为 a.out，W">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux系统编程（五）GCC">
+<meta property="og:url" content="https://qinmom.github.io/blog/2025/11/23/linuxGCC/index.html">
+<meta property="og:site_name" content="QinmoM&#39;s Blog">
+<meta property="og:description" content="b站：满目星何x  前言 编译器将高级计算机语言翻译为低级机器语言的程序。 gcc原本为GNU开发的套件，现在已经被多出Unix系统采纳为标准编译器。  基础基本格式gcc&#x2F;g++ [option] file …  命令，选项，源文件之间用空格分割。 一行命令可以有 0~多个 选项。 文件名可以是绝对路径和相对路径。 命令如果不包含可执行文件的文件名，Linux会默认为 a.out，W">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://qinmom.github.io/blog/img/028.jpg">
+<meta property="article:published_time" content="2025-11-22T16:05:37.000Z">
+<meta property="article:modified_time" content="2026-06-07T16:18:26.745Z">
+<meta property="article:author" content="qinmoM">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="GCC">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://qinmom.github.io/blog/img/028.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Linux系统编程（五）GCC",
+  "url": "https://qinmom.github.io/blog/2025/11/23/linuxGCC/",
+  "image": "https://qinmom.github.io/blog/img/028.jpg",
+  "datePublished": "2025-11-22T16:05:37.000Z",
+  "dateModified": "2026-06-07T16:18:26.745Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "qinmoM",
+      "url": "https://github.com/qinmoM/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/blog/img/favicon.png"><link rel="canonical" href="https://qinmom.github.io/blog/2025/11/23/linuxGCC/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/blog/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"/blog/search.json","preload":true,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":300,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Linux系统编程（五）GCC',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/blog/css/custom.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/blog/img/background.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/blog/img/IMG_20250630_143236.png" onerror="this.onerror=null;this.src='/blog/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">34</div></a><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">31</div></a><a href="/blog/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/blog/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/blog/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/blog/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(img/028.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/blog/"><span class="site-name">QinmoM's Blog</span></a><a class="nav-page-title" href="/blog/"><span class="site-name">Linux系统编程（五）GCC</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/blog/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/blog/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/blog/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Linux系统编程（五）GCC</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-11-22T16:05:37.000Z" title="发表于 2025-11-23 00:05:37">2025-11-23</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-07T16:18:26.745Z" title="更新于 2026-06-08 00:18:26">2026-06-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/blog/categories/Linux/">Linux</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>5分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+<p>b站：满目星何x</p>
+</blockquote>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><ul>
+<li><strong>编译器</strong><br>将高级计算机语言翻译为低级机器语言的程序。</li>
+<li><strong>gcc</strong><br>原本为GNU开发的套件，现在已经被多出Unix系统采纳为标准编译器。</li>
+</ul>
+<h1 id="基础"><a href="#基础" class="headerlink" title="基础"></a>基础</h1><h2 id="基本格式"><a href="#基本格式" class="headerlink" title="基本格式"></a>基本格式</h2><p>gcc&#x2F;g++ [option] file …</p>
+<ul>
+<li>命令，选项，源文件之间用空格分割。</li>
+<li>一行命令可以有 0~多个 选项。</li>
+<li>文件名可以是绝对路径和相对路径。</li>
+<li>命令如果不包含可执行文件的文件名，Linux会默认为 a.out，Windows为 a.exe。</li>
+</ul>
+<h2 id="选项"><a href="#选项" class="headerlink" title="选项"></a>选项</h2><ul>
+<li>-E : 预处理（去注释，宏替换，包含头文件）</li>
+<li>-S : 编译（生成 . s 汇编文件）</li>
+<li>-c : 汇编（将 . s 汇编文件生成 . o 二进制目标文件）</li>
+<li>-o : 指定可执行文件的文件名</li>
+<li>-g : 包含调试信息</li>
+<li>-O0&#x2F;O1&#x2F;O2&#x2F;Os&#x2F;O3 : 大O优化，0不优化，3优化级别最高，s表示2.5</li>
+<li>-Wall : 显示所有警告（包括低级别的）</li>
+<li>-Werror : 表示有警告就不会编译通过</li>
+<li>-D表达式 : 编译时定义宏，注意不要有空格</li>
+<li>-I路径 （大写i）: 指定头文件目录。（不加空格）</li>
+<li>-L路径 : 指定静态库目录。（不加空格）</li>
+<li>-l库名 （小写L）: 指定静态库。</li>
+<li>-shared : 生成动态库。</li>
+</ul>
+<h2 id="文件"><a href="#文件" class="headerlink" title="文件"></a>文件</h2><ul>
+<li>.s : 汇编文件。（不互通，如x86汇编不能跑在AT&amp;T下运行）</li>
+<li>.o : 二进制目标文件。（使用file查看会出现LSB，表示小端模式）</li>
+</ul>
+<h1 id="静态库与动态库"><a href="#静态库与动态库" class="headerlink" title="静态库与动态库"></a>静态库与动态库</h1><h2 id="静态链接和动态链接"><a href="#静态链接和动态链接" class="headerlink" title="静态链接和动态链接"></a>静态链接和动态链接</h2><ul>
+<li><strong>静态链接</strong><br>由链接器在链接时将库内容加入到可执行程序中。对运行环境依赖小。但是生成的程序较大，会占用更多资源；更新时需要重新编译。</li>
+<li><strong>动态链接</strong><br>仅建立于所需库函数之间的链接关系，运行时才将资源调入。程序体积小；进程间资源共享；资源占用小。但是程序依赖动态库，并且版本问题严重。</li>
+<li>Linux链接库时，默认会按照动态链接的方式。</li>
+</ul>
+<h2 id="静态库"><a href="#静态库" class="headerlink" title="静态库"></a>静态库</h2><h3 id="制作"><a href="#制作" class="headerlink" title="制作"></a>制作</h3><blockquote>
+<p>静态库在每个程序都会带有一份。因此，将两个静态库加载到内存时，如果他们都包含有一个 .o目标文件，这份 .o文件就会在内存中存在两份。</p>
+</blockquote>
+<ul>
+<li>将 .cpp文件预编译，编译，汇编 生成 .o目标文件。</li>
+<li>ar工具：<br>使用命令：ar  -rcs  静态库名称  .o文件<br>如果想将多个 .o文件 都编译成一个静态库，需要将所有 .o 都写入 -rcs 后面</li>
+<li><strong>注意</strong><br>静态库命名需要采用lib + 库名 + .a来命名。</li>
+</ul>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><ul>
+<li>gcc main.cpp -I头文件路径 -L库文件路径 -l库名</li>
+</ul>
+<h2 id="动态库"><a href="#动态库" class="headerlink" title="动态库"></a>动态库</h2><h3 id="制作-1"><a href="#制作-1" class="headerlink" title="制作"></a>制作</h3><blockquote>
+<p>在程序执行时常驻内存，可调用接口提前释放。</p>
+</blockquote>
+<ul>
+<li>生成目标文件，但是需要加入 -fpic 选项创建为 位置无关代码的 编译程序。（因为动态库会随机分配位置，不会像静态库那样固定位置）<br>示例：gcc -fpic -c main.c</li>
+<li>使用-shared选项生成动态库</li>
+<li><strong>注意</strong><br>nm 库名 ：可以查看接口。</li>
+</ul>
+<h3 id="使用-1"><a href="#使用-1" class="headerlink" title="使用"></a>使用</h3><p>系统在加载动态库可执行代码时，需要知道库的名字，还需要知道路径。指定路径的方法如下：</p>
+<ul>
+<li>（不推荐）将动态库放到标准库目录下，程序在找不到对应符号时会前往 &#x2F;lib 文件夹寻找。</li>
+<li>使用动态载入器<ol>
+<li>临时设置（不影响其他终端）：<br>  export LD_LIBRARY_PATH&#x3D;$LD_LIBRARY_PATH:动态库路径</li>
+<li>永久生效：<br>  在 bashrc 中添加 export LD_LIBRARY_PATH&#x3D;$LD_LIBRARY_PATH:动态库路径</li>
+</ol>
+<ul>
+<li>vim ~&#x2F;.bachrc</li>
+<li>在最后添加 export LD_LIBRARY_PATH&#x3D;$LD_LIBRARY_PATH:动态库路径</li>
+<li>source ~&#x2F;.bashrc（重新加载使其生效）</li>
+</ul>
+</li>
+<li>（不推荐）添加到 etc&#x2F;ld.so.conf 文件中，再执行 sudo ldconfig -v</li>
+<li>（不推荐）给 &#x2F;lib 添加符号链接（一定是绝对路径）：sudo  ln  -s  动态库路径  &#x2F;lib&#x2F;lib库名.so</li>
+</ul>
+<h1 id="GDB调试器"><a href="#GDB调试器" class="headerlink" title="GDB调试器"></a>GDB调试器</h1><p>GNU工具集的调试器是GDB，是一个交互式工具，工作在字符串模式。linux下有名的调试器还有xxgdb, ddd, kgdb, ups。</p>
+<h2 id="使用流程"><a href="#使用流程" class="headerlink" title="使用流程"></a>使用流程</h2><ul>
+<li>生成包含调试信息的程序：包含 -g 选项<br>g++ -g main.cpp -o main</li>
+<li>启动gdb<br>gdb 程序</li>
+<li>（可选）设置、查看运行时参数<br>set args &#x2F; show args</li>
+<li>启动程序<br>run：程序开始执行，有断点就停住。<br>start：开始执行，执行一行。</li>
+<li>操作<br><strong>单步执行</strong>：next &#x2F; n<br><strong>会进入函数体的单步执行</strong>：step &#x2F; s<br><strong>退出进入的函数</strong>：finish &#x2F; f<br><strong>执行到退出循环体</strong>：until &#x2F; u [行数]<br><strong>全部执行</strong>：continue &#x2F; c<br><strong>退出</strong>：quit &#x2F; q</li>
+</ul>
+<h2 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h2><ul>
+<li><strong>查看变量</strong><br>print &#x2F; p 变量名</li>
+<li><strong>显示源码</strong><br>list &#x2F; l 打印源码：<ol>
+<li>list &#x2F; l ：默认10行</li>
+<li>list 行号 ：打印行上下文</li>
+<li>list function  ：打印函数所在行上下文</li>
+<li>list - ：显示前面10行</li>
+<li>show listsize ：每次显示的行数</li>
+<li>set listsize 数字 ：设置每次显示的行数</li>
+</ol>
+</li>
+<li><strong>断点</strong><br>break &#x2F; b 设置断点：<ol>
+<li>break 行数 ：对应行数设置断点</li>
+<li>break function ：函数入口设置断点</li>
+<li>info&#x2F;i break&#x2F;b ：查看断点</li>
+<li>break 文件:行数 ：在对应文件的行数设置断点</li>
+<li>break 文件:行数 ：在对应文件的行数设置断点</li>
+<li>break class::函数 ：在对应类的函数设置断点</li>
+<li>break namespace::class::函数 ：在对应命名空间的类的函数设置断点</li>
+<li>break … if 条件 ：条件断点，满足条件时才停止<br>delete &#x2F; d 删除断点：</li>
+<li>delete ：删除所有断点</li>
+<li>delete 范围 ：删除指定范围断点<br>disable &#x2F; dis禁用，enable &#x2F; ena生效断点：</li>
+<li>break 文件:行数 ：在对应文件的行数设置断点</li>
+<li>disable ：禁用所有断点</li>
+<li>disable 范围 ：禁用范围断点</li>
+<li>enable ：生效所有断点</li>
+<li>enable 范围 ：生效范围断点</li>
+</ol>
+</li>
+<li><strong>自动显示</strong><ol>
+<li>display 变量名 ：每步自动显示变量值</li>
+<li>info display ：显示所有自动显示信息</li>
+<li>undisplay 编号（info display时的编号） ：去除自动显示</li>
+<li>delete display 编号范围 ：去除一个范围内的自动显示（如：2-5）</li>
+<li>disable display 编号范围 ：使失效</li>
+<li>enable display 编号范围 ：使生效</li>
+</ol>
+</li>
+<li><strong>查看修改变量的值</strong><ol>
+<li>ptype 变量 ：查看变量类型</li>
+<li>p 变量 ：查看变量值</li>
+</ol>
+</li>
+</ul>
+<h2 id="进程调试"><a href="#进程调试" class="headerlink" title="进程调试"></a>进程调试</h2><p>调试进程时，gdb只能跟踪一个进程：（在执行到fork之前设置）</p>
+<ul>
+<li>set follow-fork-mode child<br>跟踪子进程</li>
+<li>set follow-fork-mode parent<br>跟踪父进程</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a target="_blank" rel="noopener" href="https://github.com/qinmoM/">qinmoM</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://qinmom.github.io/blog/2025/11/23/linuxGCC/">https://qinmom.github.io/blog/2025/11/23/linuxGCC/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://qinmom.github.io/blog" target="_blank">QinmoM's Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Linux/">Linux</a><a class="post-meta__tags" href="/blog/tags/GCC/">GCC</a></div><div class="post-share"><div class="social-share" data-image="/blog/img/028.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/blog/2025/08/24/linuxConcept/" title="Linux系统编程（一）操作系统与软件概念"><img class="cover" src="/blog/img/024.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-24</div><div class="info-item-2">Linux系统编程（一）操作系统与软件概念</div></div><div class="info-2"><div class="info-item-1"> b站：io兄弟  操作系统 有效管理计算机资源的集合。  五大任务 文件管理文件与文件夹的修改、存储等。 处理器管理处理器、线程进程的管理。 内存管理（储存器管理）管理内存。 设备管理管理io设备。 作业管理管理多个任务。  Linux模块 对应上述五大任务   进程调度对应处理器管理和作业管理。 内存管理对应内存（储存器）管理。 虚拟文件系统 VFS对应设备管理。 网络接口通信。 进程间通信进程之间的通信机制。  三个基本抽象 操作系统通过三个基本抽象将硬件打包，来更容易管理硬件（实现两个功能）。两个功能：  防止硬件被软件滥用；  向应用接口提供简单一致的机制，来控制复制但大相径庭的硬件设备。   文件打包所有硬件设备。（键盘、磁盘）抽象为 文件 的概念。上层只需要“读文件”和“写文件”，就能与任何设备交互。 虚拟存储器打包  文件  和  内存  。抽象为 虚拟存储器 的概念。上层只需要将其当为一块超大空间，不用管他是内存还是磁盘，只需要使用虚拟地址访问数据就行。 进程打包  虚拟存储器  和  处理器指令架构  。抽象为 进程...</div></div></div></a><a class="pagination-related" href="/blog/2025/08/25/linuxFolderAndFile/" title="Linux系统编程（三）目录与文件"><img class="cover" src="/blog/img/026.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-25</div><div class="info-item-2">Linux系统编程（三）目录与文件</div></div><div class="info-2"><div class="info-item-1"> b站：io兄弟、满目星何x  类Unix（Linux）系统目录结构 Ubuntu没有盘符的概念，只有一个跟目录，所有文件都在它下面。  根目录： bin存放可执行文件。例如：date、ls、cat、cp 等可以在bash里直接让命令解释器运行的二进制程序。 boot存放操作系统（linux内核）启动时的所有必须文件。例如：vmlinuz-开头的核心程序、grub目录等。 cdrom临时挂载光盘设备。不使用光盘则非必须。 dev所有硬件设备（包括虚拟设备）的统一接口，系统和程序之间通过这些文件交互（本质是硬件的访问指针）。例如：input文件夹里的mice便是鼠标的文件，使用 sudo cat mice 可以在终端查看鼠标的信息输入。 etc存储程序的配置信息。例如：passwd...</div></div></div></a><a class="pagination-related" href="/blog/2025/11/25/linuxMakefile/" title="Linux系统编程（六）Makefile"><img class="cover" src="/blog/img/028.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-25</div><div class="info-item-2">Linux系统编程（六）Makefile</div></div><div class="info-2"><div class="info-item-1"> 满目星何x  概念 “自动化编译” 的工具，相当于一个shell脚本。 可以减少重复编译的时间，并且维护大量代码之间的关系。  Makefile语法规则 文件命名可以为 makefile 或 Makefile。  变量自动变量 每个标签里不同  123456789$@   # 当前目标（标签）$&lt;   # 第一个依赖文件$^   # 所有依赖文件%   # 通配符，通常与后缀名连用，相同后缀名的都计入内。# 示例（对所有.cpp文件生成.o文件，同时保留无更新就不编译的特点）%.o: %.cpp	g++ -c $&lt; -o $@ 系统提供变量1234CPPFLAGS   # C 预处理选项CC = gcc   # arm-linux-gccLDFLAGS   # 链接器选项CFLAGS   # c编译选项：-Wall -g -c 自定义变量12345678# 定义变量name = -g app main.o …# 引用变量$(name)$&#123;name&#125;# 取值$(name) 基本语法make 命令 1234567#...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/blog/img/IMG_20250630_143236.png" onerror="this.onerror=null;this.src='/blog/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">qinmoM</div><div class="author-info-description">数据结构/C++/Linux/net/other</div><div class="site-data"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">34</div></a><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">31</div></a><a href="/blog/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/qinmoM"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">欢迎来到我的技术博客！<br>目前专注于 c++ / Linux / 网络 / 项目实践<br>email - qinmo666@outlook.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9F%BA%E7%A1%80"><span class="toc-text">基础</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%A0%BC%E5%BC%8F"><span class="toc-text">基本格式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%89%E9%A1%B9"><span class="toc-text">选项</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%87%E4%BB%B6"><span class="toc-text">文件</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%9D%99%E6%80%81%E5%BA%93%E4%B8%8E%E5%8A%A8%E6%80%81%E5%BA%93"><span class="toc-text">静态库与动态库</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9D%99%E6%80%81%E9%93%BE%E6%8E%A5%E5%92%8C%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5"><span class="toc-text">静态链接和动态链接</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9D%99%E6%80%81%E5%BA%93"><span class="toc-text">静态库</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%B6%E4%BD%9C"><span class="toc-text">制作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8"><span class="toc-text">使用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A8%E6%80%81%E5%BA%93"><span class="toc-text">动态库</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%B6%E4%BD%9C-1"><span class="toc-text">制作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8-1"><span class="toc-text">使用</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#GDB%E8%B0%83%E8%AF%95%E5%99%A8"><span class="toc-text">GDB调试器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%B5%81%E7%A8%8B"><span class="toc-text">使用流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%9F%E8%83%BD"><span class="toc-text">功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E8%B0%83%E8%AF%95"><span class="toc-text">进程调试</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/11/26/linuxSystemCall2/" title="Linux系统编程（八）系统调用（2）"><img src="/blog/img/030.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（八）系统调用（2）"/></a><div class="content"><a class="title" href="/blog/2025/11/26/linuxSystemCall2/" title="Linux系统编程（八）系统调用（2）">Linux系统编程（八）系统调用（2）</a><time datetime="2026-06-08T06:33:07.976Z" title="更新于 2026-06-08 14:33:07">2026-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/11/25/linuxSystemCall1/" title="Linux系统编程（七）系统调用（1）"><img src="/blog/img/029.png" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（七）系统调用（1）"/></a><div class="content"><a class="title" href="/blog/2025/11/25/linuxSystemCall1/" title="Linux系统编程（七）系统调用（1）">Linux系统编程（七）系统调用（1）</a><time datetime="2026-06-07T16:57:33.331Z" title="更新于 2026-06-08 00:57:33">2026-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/08/25/linuxFolderAndFile/" title="Linux系统编程（三）目录与文件"><img src="/blog/img/026.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（三）目录与文件"/></a><div class="content"><a class="title" href="/blog/2025/08/25/linuxFolderAndFile/" title="Linux系统编程（三）目录与文件">Linux系统编程（三）目录与文件</a><time datetime="2026-06-07T16:43:43.888Z" title="更新于 2026-06-08 00:43:43">2026-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/08/24/linuxShell/" title="Linux系统编程（二）Linux与Shell"><img src="/blog/img/025.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（二）Linux与Shell"/></a><div class="content"><a class="title" href="/blog/2025/08/24/linuxShell/" title="Linux系统编程（二）Linux与Shell">Linux系统编程（二）Linux与Shell</a><time datetime="2026-06-07T16:18:38.930Z" title="更新于 2026-06-08 00:18:38">2026-06-08</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div id="footer-wrap"><div class="copyright">&copy;2025 - 2026 By qinmoM</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div><div class="footer_custom_text"><span>本网站所有功能仅用于个人技术学习与交流，非商业用途；<br>素材、源码仅供参考，若涉及侵权请联系作者删除</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/blog/js/utils.js"></script><script src="/blog/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/blog/js/search/local-search.js"></script></div></div></body></html>
