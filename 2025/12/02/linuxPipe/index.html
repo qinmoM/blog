@@ -1,0 +1,290 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Linux系统编程（十）管道 | QinmoM's Blog</title><meta name="author" content="qinmoM"><meta name="copyright" content="qinmoM"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="b站：满目星何x  Linux通信机制同一主机Unix进程间通信方式 无名管道 有名管道 信号  System V &#x2F; POSIX进程间通信方式 消息队列 共享内存 信号量  不同主机 Socket（套接字）  无名管道管道概念管道又称无名管道，Unix系统最古老的通信方式。特点：  半双工：数据只能超一个方向流动。只能由一段写入，一段读取。 管道具有阻塞属性，所以不需要加入sleep">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux系统编程（十）管道">
+<meta property="og:url" content="https://qinmom.github.io/blog/2025/12/02/linuxPipe/index.html">
+<meta property="og:site_name" content="QinmoM&#39;s Blog">
+<meta property="og:description" content="b站：满目星何x  Linux通信机制同一主机Unix进程间通信方式 无名管道 有名管道 信号  System V &#x2F; POSIX进程间通信方式 消息队列 共享内存 信号量  不同主机 Socket（套接字）  无名管道管道概念管道又称无名管道，Unix系统最古老的通信方式。特点：  半双工：数据只能超一个方向流动。只能由一段写入，一段读取。 管道具有阻塞属性，所以不需要加入sleep">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://qinmom.github.io/blog/img/032.png">
+<meta property="article:published_time" content="2025-12-02T06:52:46.000Z">
+<meta property="article:modified_time" content="2026-06-08T07:01:05.534Z">
+<meta property="article:author" content="qinmoM">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="管道">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://qinmom.github.io/blog/img/032.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Linux系统编程（十）管道",
+  "url": "https://qinmom.github.io/blog/2025/12/02/linuxPipe/",
+  "image": "https://qinmom.github.io/blog/img/032.png",
+  "datePublished": "2025-12-02T06:52:46.000Z",
+  "dateModified": "2026-06-08T07:01:05.534Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "qinmoM",
+      "url": "https://github.com/qinmoM/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/blog/img/favicon.png"><link rel="canonical" href="https://qinmom.github.io/blog/2025/12/02/linuxPipe/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/blog/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"/blog/search.json","preload":true,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":300,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Linux系统编程（十）管道',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/blog/css/custom.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/blog/img/background.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/blog/img/IMG_20250630_143236.png" onerror="this.onerror=null;this.src='/blog/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">41</div></a><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/blog/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/blog/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/blog/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/blog/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(img/032.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/blog/"><span class="site-name">QinmoM's Blog</span></a><a class="nav-page-title" href="/blog/"><span class="site-name">Linux系统编程（十）管道</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/blog/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/blog/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/blog/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Linux系统编程（十）管道</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-12-02T06:52:46.000Z" title="发表于 2025-12-02 14:52:46">2025-12-02</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-08T07:01:05.534Z" title="更新于 2026-06-08 15:01:05">2026-06-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/blog/categories/Linux/">Linux</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>5分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+<p>b站：满目星何x</p>
+</blockquote>
+<h1 id="Linux通信机制"><a href="#Linux通信机制" class="headerlink" title="Linux通信机制"></a>Linux通信机制</h1><h2 id="同一主机"><a href="#同一主机" class="headerlink" title="同一主机"></a>同一主机</h2><h3 id="Unix进程间通信方式"><a href="#Unix进程间通信方式" class="headerlink" title="Unix进程间通信方式"></a>Unix进程间通信方式</h3><ul>
+<li>无名管道</li>
+<li>有名管道</li>
+<li>信号</li>
+</ul>
+<h3 id="System-V-POSIX进程间通信方式"><a href="#System-V-POSIX进程间通信方式" class="headerlink" title="System V &#x2F; POSIX进程间通信方式"></a>System V &#x2F; POSIX进程间通信方式</h3><ul>
+<li>消息队列</li>
+<li>共享内存</li>
+<li>信号量</li>
+</ul>
+<h2 id="不同主机"><a href="#不同主机" class="headerlink" title="不同主机"></a>不同主机</h2><ul>
+<li>Socket（套接字）</li>
+</ul>
+<h1 id="无名管道"><a href="#无名管道" class="headerlink" title="无名管道"></a>无名管道</h1><h2 id="管道概念"><a href="#管道概念" class="headerlink" title="管道概念"></a>管道概念</h2><p><strong>管道</strong>又称无名管道，Unix系统最古老的通信方式。<br>特点：</p>
+<ul>
+<li>半双工：数据只能超一个方向流动。只能由一段写入，一段读取。</li>
+<li>管道具有阻塞属性，所以不需要加入sleep。</li>
+<li>写入遵循先入先出。</li>
+<li>传输的数据是无格式的，这就要求双方约定好数据格式。</li>
+<li>管道不是普通文件，不属于某个文件系统，只存在内存中。对应内存中的一个缓冲区，不同系统大小也不一样（一般4KB）。</li>
+<li>读取是一次性操作。管道没有名字，只能在公共祖先进程的子进程间使用。</li>
+<li>应用层体现为两个文件描述符，一个读一个写。</li>
+</ul>
+<h2 id="管道的创建和关闭"><a href="#管道的创建和关闭" class="headerlink" title="管道的创建和关闭"></a>管道的创建和关闭</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建无名管道</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pipe</span><span class="params">(<span class="type">int</span> pipefd[<span class="number">2</span>])</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	pipefd : int类型数组的首地址，存放了管道的文件描述符pipefd[0]、pipefd[1]，[0]固定读管道，[1]固定写管道，一般的I/O函数（lseek除外）都可以操作管道。</span></span><br><span class="line"><span class="comment">返回值：</span></span><br><span class="line"><span class="comment">	成功 : 0</span></span><br><span class="line"><span class="comment">	失败 : -1</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<hr>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 示例</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> fd[<span class="number">2</span>] = &#123; <span class="number">0</span>, <span class="number">0</span> &#125;;</span><br><span class="line">    <span class="type">int</span> ret = pipe(fd);</span><br><span class="line">    <span class="keyword">if</span> (<span class="number">-1</span> == ret)</span><br><span class="line">    &#123;</span><br><span class="line">        perror(<span class="string">&quot;pipe&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;fd[0] = %d, fd[1] = %d\n&quot;</span>, fd[<span class="number">0</span>], fd[<span class="number">1</span>]);</span><br><span class="line">    close(fd[<span class="number">0</span>]);</span><br><span class="line">    close(fd[<span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="管道的使用"><a href="#管道的使用" class="headerlink" title="管道的使用"></a>管道的使用</h2><ul>
+<li><strong>流程</strong><ol>
+<li>创建管道。</li>
+<li>创建子进程。（创建子进程时，文件描述符会同步给子进程）</li>
+<li>关闭子（父）进程的写描述符和父（子）进程的读描述符。</li>
+</ol>
+</li>
+</ul>
+<h2 id="管道的读写特点（情况）"><a href="#管道的读写特点（情况）" class="headerlink" title="管道的读写特点（情况）"></a>管道的读写特点（情况）</h2><ul>
+<li>读、写端都没关：<br>管道内有数据：读端可以将数据读出。写端可以写入。<br>管道内没有数据：读端阻塞。<br>管道数据已满：写端阻塞。</li>
+<li>读端没关，写端关闭：<br>管道内有数据：读端可以将数据读出。<br>管道内没有数据：读端调用<code>read</code>会返回0。</li>
+<li>读端关闭，写端没关：<br>只要写入都会触发SIGPIPE信号导致崩溃，<code>write</code>返回-1，errno设置为EPIPE。</li>
+<li>读、写端全关闭：<br>管道销毁。</li>
+</ul>
+<h2 id="管道相关命令"><a href="#管道相关命令" class="headerlink" title="管道相关命令"></a>管道相关命令</h2><h3 id="查看管道大小"><a href="#查看管道大小" class="headerlink" title="查看管道大小"></a>查看管道大小</h3><ul>
+<li>ulimit -a</li>
+</ul>
+<h2 id="管道相关函数"><a href="#管道相关函数" class="headerlink" title="管道相关函数"></a>管道相关函数</h2><h3 id="查看管道缓冲区函数"><a href="#查看管道缓冲区函数" class="headerlink" title="查看管道缓冲区函数"></a>查看管道缓冲区函数</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 通过name查看管道不同属性</span></span><br><span class="line"><span class="type">long</span> <span class="title function_">fpathconf</span><span class="params">(<span class="type">int</span> fd, <span class="type">int</span> name)</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	fd : 文件描述符</span></span><br><span class="line"><span class="comment">	name : </span></span><br><span class="line"><span class="comment">		_PC_PIPE_BUF : 查看缓冲区大小</span></span><br><span class="line"><span class="comment">		_PC_NAME_MAX : 文件名字节数的上限</span></span><br><span class="line"><span class="comment">返回值：</span></span><br><span class="line"><span class="comment">	成功 : 返回name的相关数值，字节为单位</span></span><br><span class="line"><span class="comment">	失败 : -1</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<h3 id="设置为非阻塞"><a href="#设置为非阻塞" class="headerlink" title="设置为非阻塞"></a>设置为非阻塞</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取原来的flag</span></span><br><span class="line"><span class="type">int</span> flag = fcntl(fd[<span class="number">0</span>], F_GETFL);</span><br><span class="line"><span class="comment">// 设置新的flag</span></span><br><span class="line">flag |= O_NONBLOCK</span><br><span class="line"><span class="comment">// 将flag写入</span></span><br><span class="line">fcntl(fd[<span class="number">0</span>], F_SETFL, flag);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 连起来的写法</span></span><br><span class="line">fcntl(fd[<span class="number">0</span>], F_SETFL, fcntl(fd[<span class="number">0</span>], F_GETFL) | O_NONBLOCK);</span><br></pre></td></tr></table></figure>
+<h1 id="有名管道"><a href="#有名管道" class="headerlink" title="有名管道"></a>有名管道</h1><h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>管道由于没有名字，只能同于亲缘关系之间的通信，为了克服这个缺点，就有了命名管道（FIFO）。<br><strong>特点</strong></p>
+<ul>
+<li>FIFO作为一个特殊文件存在，它的内容是放在内存的。</li>
+<li>使用FIFO的进程退出后，FIFO会继续存放在内存。</li>
+<li>FIFO有名字，不相关的进程可以通过命名管道通信。</li>
+</ul>
+<h2 id="相关命令"><a href="#相关命令" class="headerlink" title="相关命令"></a>相关命令</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建fifoname的有名管道</span></span><br><span class="line">mkfifo fifoname</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">重定向写入有名管道</span></span><br><span class="line">echo &quot;test&quot; &gt; fifoname</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">注：此时会触发阻塞，需要在另一端读取才可以执行</span></span><br><span class="line">cat &lt; fifoname</span><br></pre></td></tr></table></figure>
+<h2 id="相关函数"><a href="#相关函数" class="headerlink" title="相关函数"></a>相关函数</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建有名管道</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">mkfifo</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *pathname, <span class="type">mode_t</span> mode)</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	pathname : 管道的路径名</span></span><br><span class="line"><span class="comment">	mode : 文件的权限，与open中的mode参数相同（0644、0666）</span></span><br><span class="line"><span class="comment">返回值：</span></span><br><span class="line"><span class="comment">	成功 : 0、状态码</span></span><br><span class="line"><span class="comment">	失败 : -1</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<h2 id="读写特点（情况）"><a href="#读写特点（情况）" class="headerlink" title="读写特点（情况）"></a>读写特点（情况）</h2><ul>
+<li>有一端未打开时：<br>读端和写端都会被阻塞。</li>
+<li>全部打开时：<br>无数据时读端阻塞。<br>数据满时写端阻塞。</li>
+</ul>
+<h1 id="共享存储映射"><a href="#共享存储映射" class="headerlink" title="共享存储映射"></a>共享存储映射</h1><p>最快的ICP形式，直接将文件内容映射到内存上。</p>
+<ul>
+<li>mmap</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 将文件映射到内存</span></span><br><span class="line"><span class="type">void</span> *<span class="title function_">mmap</span><span class="params">(<span class="type">void</span> *addr, <span class="type">sizt_t</span> length, <span class="type">int</span> prot, <span class="type">int</span> flags, <span class="type">int</span> fd, <span class="type">off_t</span> offset)</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	addr : 映射区的起始地址，一般传NULL，让系统指定</span></span><br><span class="line"><span class="comment">	length : 映射到内存的长度</span></span><br><span class="line"><span class="comment">	prot : 映射区的保护方式 : </span></span><br><span class="line"><span class="comment">		读 : PROT_READ</span></span><br><span class="line"><span class="comment">		写 : PROT_WRITE</span></span><br><span class="line"><span class="comment">		读写 : PROT_READ | PROT_WRITE</span></span><br><span class="line"><span class="comment">	flags : 映射区的特性</span></span><br><span class="line"><span class="comment">		MAP_SHARED : 共享修改，直接影响源文件</span></span><br><span class="line"><span class="comment">		MAP_PRIVATE : 私有修改，不影响源文件</span></span><br><span class="line"><span class="comment">	fd : 要映射文件的文件描述符</span></span><br><span class="line"><span class="comment">	offset : 文件开始处的偏移量，必须是4k的整数倍，一般指定0</span></span><br><span class="line"><span class="comment">返回值：</span></span><br><span class="line"><span class="comment">	成功 : 映射区的首地址</span></span><br><span class="line"><span class="comment">	失败 : MAP_FAILED宏</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>munmap</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 释放映射区</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">munmap</span><span class="params">(<span class="type">void</span> *addr, <span class="type">size_t</span> length)</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	addr : 映射区指针</span></span><br><span class="line"><span class="comment">	length : 映射区大小</span></span><br><span class="line"><span class="comment">返回值：</span></span><br><span class="line"><span class="comment">	成功 : 0</span></span><br><span class="line"><span class="comment">	失败 : -1</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p>注</p>
+<ul>
+<li>映射不受文件描述符影响，即使文件关闭也可以写入。</li>
+<li>创建时<code>length</code>不能为0。</li>
+<li>文件偏移量必须是4k整数倍。</li>
+<li><code>mmap</code>出错概率非常高，一定要检查返回值。</li>
+<li><code>munmap</code>一定是mmap返回的地址，杜绝<code>++</code>的操作。</li>
+<li><code>prot</code>是对内存的权限，和能影响文件的<code>MAP_SHARED</code>参数都需要保证文件的权限大于他们才行。</li>
+<li>与无名管道一样，父子进程可通过它通信。但映射本身是引用计数为0才会回收，所有只有父子进程关闭才会释放资源。程序正常退出也会释放。</li>
+</ul>
+<h1 id="匿名映射"><a href="#匿名映射" class="headerlink" title="匿名映射"></a>匿名映射</h1><ul>
+<li>父子进程间通信如果采用普通映射，需要创建、打开、关闭、删除文件等一系列手续，使用匿名映射可以规避这个问题。</li>
+<li>实现：<br>给<code>mmap</code>的<code>flags</code>指定宏<code>MAP_ANONYMOUS</code>（或<code>MAP_ANON</code>）。只能和<code>MAP_SHARED</code>联合使用。</li>
+<li>注：<br>匿名映射会忽略<code>mmap</code>的后两个参数。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a target="_blank" rel="noopener" href="https://github.com/qinmoM/">qinmoM</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://qinmom.github.io/blog/2025/12/02/linuxPipe/">https://qinmom.github.io/blog/2025/12/02/linuxPipe/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://qinmom.github.io/blog" target="_blank">QinmoM's Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Linux/">Linux</a><a class="post-meta__tags" href="/blog/tags/%E7%AE%A1%E9%81%93/">管道</a></div><div class="post-share"><div class="social-share" data-image="/blog/img/032.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/blog/2025/08/25/linuxCommand/" title="Linux系统编程（补充一）命令"><img class="cover" src="/blog/img/036.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-25</div><div class="info-item-2">Linux系统编程（补充一）命令</div></div><div class="info-2"><div class="info-item-1"> b站：满目星何x  常见命令 .&#x2F;FileName执行当前目录下FileName文件。 ctrl + c可强制终止执行。  外部命令（&#x2F;bin目录下的文件）：目录与文件：ls ls显示所有文件。 ls –help显示ls的帮助文档。 ls *asd &#x2F; ls a*查找所有asd结尾的文件。 &#x2F; 查找所有 a 开头的文件。  参数： 例：ls -ld : 按长格式仅显示目录本身。   l显示长格式（详细信息）。从前到后分别是：权限，硬连接计数，所有者，所有组，大小，时间，文件名 a显示隐藏文件。 d仅显示目录本身。 r反向排序显示当前目录内容。 R递归列出目录即子目录全部内容。  touch touch NewFile创建一个NewFile空文件。 touch 同名文件可以刷新文件的时间。  mkdir mkdir FolderName创建FolderName的目录。  which which OrderName在环境变量指定位置 查找OrderName命令所在的位置。  cp cp FileName复制FileName文件。 cp...</div></div></div></a><a class="pagination-related" href="/blog/2025/08/25/linuxFolderAndFile/" title="Linux系统编程（三）目录与文件"><img class="cover" src="/blog/img/026.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-25</div><div class="info-item-2">Linux系统编程（三）目录与文件</div></div><div class="info-2"><div class="info-item-1"> b站：io兄弟、满目星何x  类Unix（Linux）系统目录结构 Ubuntu没有盘符的概念，只有一个跟目录，所有文件都在它下面。  根目录： bin存放可执行文件。例如：date、ls、cat、cp 等可以在bash里直接让命令解释器运行的二进制程序。 boot存放操作系统（linux内核）启动时的所有必须文件。例如：vmlinuz-开头的核心程序、grub目录等。 cdrom临时挂载光盘设备。不使用光盘则非必须。 dev所有硬件设备（包括虚拟设备）的统一接口，系统和程序之间通过这些文件交互（本质是硬件的访问指针）。例如：input文件夹里的mice便是鼠标的文件，使用 sudo cat mice 可以在终端查看鼠标的信息输入。 etc存储程序的配置信息。例如：passwd...</div></div></div></a><a class="pagination-related" href="/blog/2025/08/24/linuxConcept/" title="Linux系统编程（一）操作系统与软件概念"><img class="cover" src="/blog/img/024.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-24</div><div class="info-item-2">Linux系统编程（一）操作系统与软件概念</div></div><div class="info-2"><div class="info-item-1"> b站：io兄弟  操作系统 有效管理计算机资源的集合。  五大任务 文件管理文件与文件夹的修改、存储等。 处理器管理处理器、线程进程的管理。 内存管理（储存器管理）管理内存。 设备管理管理io设备。 作业管理管理多个任务。  Linux模块 对应上述五大任务   进程调度对应处理器管理和作业管理。 内存管理对应内存（储存器）管理。 虚拟文件系统 VFS对应设备管理。 网络接口通信。 进程间通信进程之间的通信机制。  三个基本抽象 操作系统通过三个基本抽象将硬件打包，来更容易管理硬件（实现两个功能）。两个功能：  防止硬件被软件滥用；  向应用接口提供简单一致的机制，来控制复制但大相径庭的硬件设备。   文件打包所有硬件设备。（键盘、磁盘）抽象为 文件 的概念。上层只需要“读文件”和“写文件”，就能与任何设备交互。 虚拟存储器打包  文件  和  内存  。抽象为 虚拟存储器 的概念。上层只需要将其当为一块超大空间，不用管他是内存还是磁盘，只需要使用虚拟地址访问数据就行。 进程打包  虚拟存储器  和  处理器指令架构  。抽象为 进程...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/blog/img/IMG_20250630_143236.png" onerror="this.onerror=null;this.src='/blog/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">qinmoM</div><div class="author-info-description">数据结构/C++/Linux/net/other</div><div class="site-data"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">41</div></a><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/blog/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/qinmoM"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">欢迎来到我的技术博客！<br>目前专注于 c++ / Linux / 网络 / 项目实践<br>email - qinmo666@outlook.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Linux%E9%80%9A%E4%BF%A1%E6%9C%BA%E5%88%B6"><span class="toc-text">Linux通信机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%8C%E4%B8%80%E4%B8%BB%E6%9C%BA"><span class="toc-text">同一主机</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Unix%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E6%96%B9%E5%BC%8F"><span class="toc-text">Unix进程间通信方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#System-V-POSIX%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E6%96%B9%E5%BC%8F"><span class="toc-text">System V &#x2F; POSIX进程间通信方式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8D%E5%90%8C%E4%B8%BB%E6%9C%BA"><span class="toc-text">不同主机</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%97%A0%E5%90%8D%E7%AE%A1%E9%81%93"><span class="toc-text">无名管道</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%A1%E9%81%93%E6%A6%82%E5%BF%B5"><span class="toc-text">管道概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%A1%E9%81%93%E7%9A%84%E5%88%9B%E5%BB%BA%E5%92%8C%E5%85%B3%E9%97%AD"><span class="toc-text">管道的创建和关闭</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%A1%E9%81%93%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-text">管道的使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%A1%E9%81%93%E7%9A%84%E8%AF%BB%E5%86%99%E7%89%B9%E7%82%B9%EF%BC%88%E6%83%85%E5%86%B5%EF%BC%89"><span class="toc-text">管道的读写特点（情况）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%A1%E9%81%93%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4"><span class="toc-text">管道相关命令</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8B%E7%AE%A1%E9%81%93%E5%A4%A7%E5%B0%8F"><span class="toc-text">查看管道大小</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%A1%E9%81%93%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="toc-text">管道相关函数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8B%E7%AE%A1%E9%81%93%E7%BC%93%E5%86%B2%E5%8C%BA%E5%87%BD%E6%95%B0"><span class="toc-text">查看管道缓冲区函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E4%B8%BA%E9%9D%9E%E9%98%BB%E5%A1%9E"><span class="toc-text">设置为非阻塞</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9C%89%E5%90%8D%E7%AE%A1%E9%81%93"><span class="toc-text">有名管道</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E5%BF%B5"><span class="toc-text">概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4"><span class="toc-text">相关命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="toc-text">相关函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%BB%E5%86%99%E7%89%B9%E7%82%B9%EF%BC%88%E6%83%85%E5%86%B5%EF%BC%89"><span class="toc-text">读写特点（情况）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8%E6%98%A0%E5%B0%84"><span class="toc-text">共享存储映射</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8C%BF%E5%90%8D%E6%98%A0%E5%B0%84"><span class="toc-text">匿名映射</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/11/25/linuxMakefile/" title="Linux系统编程（六）Makefile"><img src="/blog/img/038.png" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（六）Makefile"/></a><div class="content"><a class="title" href="/blog/2025/11/25/linuxMakefile/" title="Linux系统编程（六）Makefile">Linux系统编程（六）Makefile</a><time datetime="2026-06-08T07:45:42.721Z" title="更新于 2026-06-08 15:45:42">2026-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/11/25/linuxSystemCall1/" title="Linux系统编程（七）系统调用（1）"><img src="/blog/img/029.png" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（七）系统调用（1）"/></a><div class="content"><a class="title" href="/blog/2025/11/25/linuxSystemCall1/" title="Linux系统编程（七）系统调用（1）">Linux系统编程（七）系统调用（1）</a><time datetime="2026-06-08T07:44:26.369Z" title="更新于 2026-06-08 15:44:26">2026-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/11/26/linuxSystemCall2/" title="Linux系统编程（八）系统调用（2）"><img src="/blog/img/030.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（八）系统调用（2）"/></a><div class="content"><a class="title" href="/blog/2025/11/26/linuxSystemCall2/" title="Linux系统编程（八）系统调用（2）">Linux系统编程（八）系统调用（2）</a><time datetime="2026-06-08T07:44:23.662Z" title="更新于 2026-06-08 15:44:23">2026-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/08/25/linuxCommand/" title="Linux系统编程（补充一）命令"><img src="/blog/img/036.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（补充一）命令"/></a><div class="content"><a class="title" href="/blog/2025/08/25/linuxCommand/" title="Linux系统编程（补充一）命令">Linux系统编程（补充一）命令</a><time datetime="2026-06-08T07:40:31.124Z" title="更新于 2026-06-08 15:40:31">2026-06-08</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div id="footer-wrap"><div class="copyright">&copy;2025 - 2026 By qinmoM</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div><div class="footer_custom_text"><span>本网站所有功能仅用于个人技术学习与交流，非商业用途；<br>素材、源码仅供参考，若涉及侵权请联系作者删除</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/blog/js/utils.js"></script><script src="/blog/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/blog/js/search/local-search.js"></script></div></div></body></html>

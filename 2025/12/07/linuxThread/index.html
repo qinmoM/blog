@@ -1,0 +1,315 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Linux系统编程（十二）线程 | QinmoM's Blog</title><meta name="author" content="qinmoM"><meta name="copyright" content="qinmoM"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="b站：满目星何x   注gcc编译时需加入参数-lpthread或-pthread。  概念 线程是一个轻量级的进程，也有PCB，Linux下线程的本质依然是进程。 进程是系统分配资源的最小单位：保存在硬盘空间，会在内存空间形成一个独立的个体，有自己的地址。操作系统以进程为单位分配资源。 线程是系统调度的最小单位：进程的构成一定会包含线程的所有结构，即进程中最少有一个线程，或进程是线程的一个容器">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux系统编程（十二）线程">
+<meta property="og:url" content="https://qinmom.github.io/blog/2025/12/07/linuxThread/index.html">
+<meta property="og:site_name" content="QinmoM&#39;s Blog">
+<meta property="og:description" content="b站：满目星何x   注gcc编译时需加入参数-lpthread或-pthread。  概念 线程是一个轻量级的进程，也有PCB，Linux下线程的本质依然是进程。 进程是系统分配资源的最小单位：保存在硬盘空间，会在内存空间形成一个独立的个体，有自己的地址。操作系统以进程为单位分配资源。 线程是系统调度的最小单位：进程的构成一定会包含线程的所有结构，即进程中最少有一个线程，或进程是线程的一个容器">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://qinmom.github.io/blog/img/034.png">
+<meta property="article:published_time" content="2025-12-07T06:57:33.000Z">
+<meta property="article:modified_time" content="2026-06-08T07:00:35.605Z">
+<meta property="article:author" content="qinmoM">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="线程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://qinmom.github.io/blog/img/034.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Linux系统编程（十二）线程",
+  "url": "https://qinmom.github.io/blog/2025/12/07/linuxThread/",
+  "image": "https://qinmom.github.io/blog/img/034.png",
+  "datePublished": "2025-12-07T06:57:33.000Z",
+  "dateModified": "2026-06-08T07:00:35.605Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "qinmoM",
+      "url": "https://github.com/qinmoM/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/blog/img/favicon.png"><link rel="canonical" href="https://qinmom.github.io/blog/2025/12/07/linuxThread/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/blog/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'undefined')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"/blog/search.json","preload":true,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":300,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: {"chs_to_cht":"已切换为繁体中文","cht_to_chs":"已切换为简体中文","day_to_night":"已切换为深色模式","night_to_day":"已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Linux系统编程（十二）线程',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/blog/css/custom.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/blog/img/background.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/blog/img/IMG_20250630_143236.png" onerror="this.onerror=null;this.src='/blog/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">41</div></a><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/blog/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/blog/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/blog/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/blog/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(img/034.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/blog/"><span class="site-name">QinmoM's Blog</span></a><a class="nav-page-title" href="/blog/"><span class="site-name">Linux系统编程（十二）线程</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/blog/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/blog/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/blog/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Linux系统编程（十二）线程</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-12-07T06:57:33.000Z" title="发表于 2025-12-07 14:57:33">2025-12-07</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-08T07:00:35.605Z" title="更新于 2026-06-08 15:00:35">2026-06-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/blog/categories/Linux/">Linux</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>4分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+<p>b站：满目星何x</p>
+</blockquote>
+<ul>
+<li>注<br><code>gcc</code>编译时需加入参数<code>-lpthread</code>或<code>-pthread</code>。</li>
+</ul>
+<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><ul>
+<li>线程是一个轻量级的进程，也有PCB，Linux下线程的本质依然是进程。</li>
+<li>进程是系统<strong>分配资源</strong>的最小单位：保存在硬盘空间，会在内存空间形成一个独立的个体，有自己的地址。操作系统以进程为单位分配资源。</li>
+<li>线程是<strong>系统调度</strong>的最小单位：进程的构成一定会包含线程的所有结构，即进程中最少有一个线程，或进程是线程的一个容器。</li>
+<li>线程是CPU委派任务的基本单位，本身基本不包含系统资源（除程序计数器、栈等）；它可以与同属一个进程的其他线程贡献全部资源。</li>
+<li>进程本身不进行调用，只做资源分配，调度的事情是交给内部的线程完成的。</li>
+<li>进程可以蜕变为线程。</li>
+<li>无论是创建进程的fork还是创建线程的thread_create，低层实现都是调用一个内核函数clone。复制对方的地址就是进程，共享对方的地址就是线程。</li>
+</ul>
+<h2 id="NPTL"><a href="#NPTL" class="headerlink" title="NPTL"></a>NPTL</h2><ul>
+<li>native POSIX thread library。Linux线程的一个新实现，符合POSIX要求并且比LinuxThreads更具性能和稳定。</li>
+</ul>
+<h2 id="LWP"><a href="#LWP" class="headerlink" title="LWP"></a>LWP</h2><ul>
+<li>用户级线程（NPTL）会绑定到LWP（内核轻量级进程）上，一个进程可以有多个LWP，最终线程调度器会把LWP和绑定到上面的用户级线程分配到CPU。</li>
+</ul>
+<h2 id="线程共享资源与非共享资源"><a href="#线程共享资源与非共享资源" class="headerlink" title="线程共享资源与非共享资源"></a>线程共享资源与非共享资源</h2><h3 id="共享资源"><a href="#共享资源" class="headerlink" title="共享资源"></a>共享资源</h3><ul>
+<li>文件描述符表</li>
+<li>信号的处理方式</li>
+<li>工作目录</li>
+<li>用户id和组id</li>
+<li>内存地址空间</li>
+</ul>
+<h3 id="非共享资源"><a href="#非共享资源" class="headerlink" title="非共享资源"></a>非共享资源</h3><ul>
+<li>线程id</li>
+<li>处理器线程和栈指针（内核栈）</li>
+<li>独立的栈空间（用户空间栈）</li>
+<li>errno变量</li>
+<li>信号屏蔽字</li>
+<li>调度优先级</li>
+</ul>
+<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><ul>
+<li>提高并发性</li>
+<li>开销小</li>
+<li>数据通信方便</li>
+</ul>
+<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><ul>
+<li>库函数不稳定</li>
+<li>调试困难，gdb不支持</li>
+<li>信号支持不友好</li>
+</ul>
+<h1 id="操作"><a href="#操作" class="headerlink" title="操作"></a>操作</h1><h2 id="线程号"><a href="#线程号" class="headerlink" title="线程号"></a>线程号</h2><ul>
+<li>只在对应进程环境唯一。</li>
+<li>不同系统对pthread的实现不一样，做可移植的程序时不能把<code>pthread_t</code>当整形处理（如<code>==</code>判断等于）。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取当前进程号，总是成功</span></span><br><span class="line"><span class="type">pthread_t</span> <span class="title function_">pthread_self</span><span class="params">(<span class="type">void</span>)</span>;</span><br><span class="line"><span class="comment">// 判断进程号是否相等   相同：非0，不相等：0</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_equal</span><span class="params">(<span class="type">pthread_t</span> t1, <span class="type">pthread_t</span> t2)</span>;</span><br></pre></td></tr></table></figure>
+<h2 id="创建线程"><a href="#创建线程" class="headerlink" title="创建线程"></a>创建线程</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建一个线程</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_create</span><span class="params">(<span class="type">pthread_t</span> *thread,</span></span><br><span class="line"><span class="params">				<span class="type">const</span> <span class="type">pthread_attr_t</span> *attr,</span></span><br><span class="line"><span class="params">				<span class="type">void</span> *(*start_routine)(<span class="type">void</span> *)</span></span><br><span class="line"><span class="params">				<span class="type">void</span> *arg )</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	thread : 线程标识符地址</span></span><br><span class="line"><span class="comment">	attr : 线程属性，通常设置为NULL</span></span><br><span class="line"><span class="comment">	start_routine : 线程函数的入口地址</span></span><br><span class="line"><span class="comment">	arg : 传给线程的参数</span></span><br><span class="line"><span class="comment">返回值：</span></span><br><span class="line"><span class="comment">	成功 : 0</span></span><br><span class="line"><span class="comment">	失败 : 非0</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p>注：</p>
+<ul>
+<li><code>pthread_create</code>的错误码不保存在<code>errno</code>中，支只能使用<code>strerror</code>把错误码转化为信息后打印。</li>
+<li><code>arg</code>可以传入共享静态变量或堆空间变量，但是栈变量不可以。</li>
+</ul>
+<h2 id="回收资源"><a href="#回收资源" class="headerlink" title="回收资源"></a>回收资源</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 等待线程结束（会阻塞），回收线程资源，类型wait函数。线程结束则立即返回</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_join</span><span class="params">(<span class="type">pthread_t</span> thread, <span class="type">void</span> **retval)</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	thread : 被等待的进程号</span></span><br><span class="line"><span class="comment">	retval : 用来存储退出状态的指针地址</span></span><br><span class="line"><span class="comment">返回值：</span></span><br><span class="line"><span class="comment">	成功 : 0</span></span><br><span class="line"><span class="comment">	失败 : 非0</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p>注：</p>
+<ul>
+<li>与进程相同，不回收线程会导致线程变为<strong>僵尸线程</strong>。</li>
+<li>不可设置为非阻塞。</li>
+<li>终止状态分类：<br>通过<code>return</code>等退出，<code>retval</code>中存放的是函数返回值。<br>被别的线程调用<code>pthread_cancel</code>终止，存放的是常数<code>PTHREAD_CANCELED</code>。<br>通过<code>thread_exit</code>自己结束的，存放的是它的参数。</li>
+</ul>
+<h2 id="线程分离"><a href="#线程分离" class="headerlink" title="线程分离"></a>线程分离</h2><ul>
+<li>线程可以设置为<code>detach</code>，在线程终止时立刻回收它的资源。</li>
+<li>处于<code>detach</code>的线程不能调用<code>pthread_join</code>，否则会返回<code>EINVAL</code>错误。</li>
+<li>线程依然依赖当前进程，只不过是将资源的回收工作给了系统来完成。</li>
+<li>函数不会阻塞。</li>
+<li>会随进程结束而结束。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 使线程与当前进程分离。</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_detach</span><span class="params">(<span class="type">pthread_t</span> thread)</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	thread : 线程号</span></span><br><span class="line"><span class="comment">返回值：</span></span><br><span class="line"><span class="comment">	成功 : 0</span></span><br><span class="line"><span class="comment">	失败 : 非0</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<h2 id="线程退出"><a href="#线程退出" class="headerlink" title="线程退出"></a>线程退出</h2><ul>
+<li>不能通过<code>exit</code>退出。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#incldue <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 退出线程，但是不退出进程</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">pthread_exit</span><span class="params">(<span class="type">void</span> *retval)</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	retval : 存储线程退出状态的指针</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<h2 id="线程取消"><a href="#线程取消" class="headerlink" title="线程取消"></a>线程取消</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 通过信号杀死线程，线程对信号的支持不好，一般不用</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_kill</span><span class="params">(<span class="type">pthread_t</span> thread, <span class="type">int</span> sig)</span>;</span><br><span class="line"><span class="comment">// 取消（杀死）线程</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pthread_cancel</span><span class="params">(<span class="type">pthread_t</span> thread)</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">参数：</span></span><br><span class="line"><span class="comment">	thread : 目标线程ID</span></span><br><span class="line"><span class="comment">返回值：</span></span><br><span class="line"><span class="comment">	成功 : 0</span></span><br><span class="line"><span class="comment">	失败 : 出错编号</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p>注：</p>
+<ul>
+<li>必须为同一个进程。</li>
+<li>线程取消是有延迟的，需要等线程达到某个取消点。</li>
+<li><strong>取消点</strong>：通常是一些系统调用，create，open，read … 。执行 man 7 pthreads 可以查看具体列表。</li>
+</ul>
+<h2 id="线程状态"><a href="#线程状态" class="headerlink" title="线程状态"></a>线程状态</h2><p>用于创建进程，可自行了解其函数。</p>
+<ul>
+<li>设置分离状态。</li>
+<li>栈地址。</li>
+<li>栈大小</li>
+<li>…</li>
+</ul>
+<h1 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h1><p>1&gt;避免僵尸线程：</p>
+<ul>
+<li>pthread_join</li>
+<li>pthread_detach</li>
+<li>pthread_create指定分离属性<br>2&gt;<code>malloc</code>和<code>mmap</code>的内存可以被其他线程释放。<br>3&gt;多线程模型下尽量不同<code>fork</code>，除非马上<code>exec</code>。<br>4&gt;避免在多线程中使用信号。<br>5&gt;若要让子线程不受其他线程退出影响，则主线程或其他线程中需要使用<code>pthread_exit</code>退出。</li>
+</ul>
+<h1 id="密集型"><a href="#密集型" class="headerlink" title="密集型"></a>密集型</h1><h2 id="IO密集型"><a href="#IO密集型" class="headerlink" title="IO密集型"></a>IO密集型</h2><ul>
+<li>指较多IO操作（阻塞），CPU较空闲。</li>
+<li>如：网络、文件、设备、数据库操作。</li>
+<li>推荐使用异步&#x2F;事件驱动（epoll）。</li>
+</ul>
+<h2 id="CPU密集型"><a href="#CPU密集型" class="headerlink" title="CPU密集型"></a>CPU密集型</h2><ul>
+<li>较多CPU计算，CPU较忙。</li>
+<li>如：AI学习、图形渲染、视频编解码。</li>
+<li>推荐使用线程池，避免上下文切换。</li>
+</ul>
+<h2 id="注"><a href="#注" class="headerlink" title="注"></a>注</h2><ul>
+<li>在单核情况下，不适用<strong>CPU密集型</strong>的程序，会多出额外的信息。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a target="_blank" rel="noopener" href="https://github.com/qinmoM/">qinmoM</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://qinmom.github.io/blog/2025/12/07/linuxThread/">https://qinmom.github.io/blog/2025/12/07/linuxThread/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://qinmom.github.io/blog" target="_blank">QinmoM's Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Linux/">Linux</a><a class="post-meta__tags" href="/blog/tags/%E7%BA%BF%E7%A8%8B/">线程</a></div><div class="post-share"><div class="social-share" data-image="/blog/img/034.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/blog/2025/12/08/linuxThreadSync/" title="Linux系统编程（十三）线程同步"><img class="cover" src="/blog/img/035.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-08</div><div class="info-item-2">Linux系统编程（十三）线程同步</div></div><div class="info-2"><div class="info-item-1"> b站：满目星何x  互斥锁同步与互斥概念互斥 散步在不同任务中的若干片段，当某个任务运行其中一个片段时，其他任务就不能运行他们的任一片段。 即：一个公共资源同一时刻只能被同一个进程或线程使用。  同步 散步在不同任务中的多个片段，他们的运行必须按照某种次序来。如A任务依赖于B任务产生的数据。 即：同步是一种更严苛的互斥，他们的运行次序必须依赖于特定任务。  互斥锁 访问共享资源后，临界区域前，对互斥锁进行加锁。 访问完成后释放锁。 加锁后，试图再次对互斥锁加锁的线程会被阻塞。  pthread_mutex_init123456789101112131415#include &lt;pthread.h&gt;// 初始化一个互斥锁（动态）int pthread_mutex_init(pthread_mutex_t *restrict mutex,	const pthread_mutexattr_t *restrict attr);/*参数：	mutex : 互斥锁地址	attr : 设置互斥量属性，通常写NULL返回值：	成功 : 成功申请的锁默认是打开的	失败 :...</div></div></div></a><a class="pagination-related" href="/blog/2025/08/25/linuxCommand/" title="Linux系统编程（补充一）命令"><img class="cover" src="/blog/img/036.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-25</div><div class="info-item-2">Linux系统编程（补充一）命令</div></div><div class="info-2"><div class="info-item-1"> b站：满目星何x  常见命令 .&#x2F;FileName执行当前目录下FileName文件。 ctrl + c可强制终止执行。  外部命令（&#x2F;bin目录下的文件）：目录与文件：ls ls显示所有文件。 ls –help显示ls的帮助文档。 ls *asd &#x2F; ls a*查找所有asd结尾的文件。 &#x2F; 查找所有 a 开头的文件。  参数： 例：ls -ld : 按长格式仅显示目录本身。   l显示长格式（详细信息）。从前到后分别是：权限，硬连接计数，所有者，所有组，大小，时间，文件名 a显示隐藏文件。 d仅显示目录本身。 r反向排序显示当前目录内容。 R递归列出目录即子目录全部内容。  touch touch NewFile创建一个NewFile空文件。 touch 同名文件可以刷新文件的时间。  mkdir mkdir FolderName创建FolderName的目录。  which which OrderName在环境变量指定位置 查找OrderName命令所在的位置。  cp cp FileName复制FileName文件。 cp...</div></div></div></a><a class="pagination-related" href="/blog/2025/08/25/linuxFolderAndFile/" title="Linux系统编程（三）目录与文件"><img class="cover" src="/blog/img/026.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-25</div><div class="info-item-2">Linux系统编程（三）目录与文件</div></div><div class="info-2"><div class="info-item-1"> b站：io兄弟、满目星何x  类Unix（Linux）系统目录结构 Ubuntu没有盘符的概念，只有一个跟目录，所有文件都在它下面。  根目录： bin存放可执行文件。例如：date、ls、cat、cp 等可以在bash里直接让命令解释器运行的二进制程序。 boot存放操作系统（linux内核）启动时的所有必须文件。例如：vmlinuz-开头的核心程序、grub目录等。 cdrom临时挂载光盘设备。不使用光盘则非必须。 dev所有硬件设备（包括虚拟设备）的统一接口，系统和程序之间通过这些文件交互（本质是硬件的访问指针）。例如：input文件夹里的mice便是鼠标的文件，使用 sudo cat mice 可以在终端查看鼠标的信息输入。 etc存储程序的配置信息。例如：passwd...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/blog/img/IMG_20250630_143236.png" onerror="this.onerror=null;this.src='/blog/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">qinmoM</div><div class="author-info-description">数据结构/C++/Linux/net/other</div><div class="site-data"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">41</div></a><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/blog/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/qinmoM"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">欢迎来到我的技术博客！<br>目前专注于 c++ / Linux / 网络 / 项目实践<br>email - qinmo666@outlook.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A6%82%E5%BF%B5"><span class="toc-text">概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#NPTL"><span class="toc-text">NPTL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LWP"><span class="toc-text">LWP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E5%85%B1%E4%BA%AB%E8%B5%84%E6%BA%90%E4%B8%8E%E9%9D%9E%E5%85%B1%E4%BA%AB%E8%B5%84%E6%BA%90"><span class="toc-text">线程共享资源与非共享资源</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B1%E4%BA%AB%E8%B5%84%E6%BA%90"><span class="toc-text">共享资源</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9D%9E%E5%85%B1%E4%BA%AB%E8%B5%84%E6%BA%90"><span class="toc-text">非共享资源</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="toc-text">优缺点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%98%E7%82%B9"><span class="toc-text">优点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%BA%E7%82%B9"><span class="toc-text">缺点</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%93%8D%E4%BD%9C"><span class="toc-text">操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E5%8F%B7"><span class="toc-text">线程号</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E7%BA%BF%E7%A8%8B"><span class="toc-text">创建线程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9E%E6%94%B6%E8%B5%84%E6%BA%90"><span class="toc-text">回收资源</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E5%88%86%E7%A6%BB"><span class="toc-text">线程分离</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E9%80%80%E5%87%BA"><span class="toc-text">线程退出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E5%8F%96%E6%B6%88"><span class="toc-text">线程取消</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E7%8A%B6%E6%80%81"><span class="toc-text">线程状态</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F"><span class="toc-text">注意</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AF%86%E9%9B%86%E5%9E%8B"><span class="toc-text">密集型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#IO%E5%AF%86%E9%9B%86%E5%9E%8B"><span class="toc-text">IO密集型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CPU%E5%AF%86%E9%9B%86%E5%9E%8B"><span class="toc-text">CPU密集型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8"><span class="toc-text">注</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/11/25/linuxMakefile/" title="Linux系统编程（六）Makefile"><img src="/blog/img/038.png" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（六）Makefile"/></a><div class="content"><a class="title" href="/blog/2025/11/25/linuxMakefile/" title="Linux系统编程（六）Makefile">Linux系统编程（六）Makefile</a><time datetime="2026-06-08T07:45:42.721Z" title="更新于 2026-06-08 15:45:42">2026-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/11/25/linuxSystemCall1/" title="Linux系统编程（七）系统调用（1）"><img src="/blog/img/029.png" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（七）系统调用（1）"/></a><div class="content"><a class="title" href="/blog/2025/11/25/linuxSystemCall1/" title="Linux系统编程（七）系统调用（1）">Linux系统编程（七）系统调用（1）</a><time datetime="2026-06-08T07:44:26.369Z" title="更新于 2026-06-08 15:44:26">2026-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/11/26/linuxSystemCall2/" title="Linux系统编程（八）系统调用（2）"><img src="/blog/img/030.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（八）系统调用（2）"/></a><div class="content"><a class="title" href="/blog/2025/11/26/linuxSystemCall2/" title="Linux系统编程（八）系统调用（2）">Linux系统编程（八）系统调用（2）</a><time datetime="2026-06-08T07:44:23.662Z" title="更新于 2026-06-08 15:44:23">2026-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/08/25/linuxCommand/" title="Linux系统编程（补充一）命令"><img src="/blog/img/036.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（补充一）命令"/></a><div class="content"><a class="title" href="/blog/2025/08/25/linuxCommand/" title="Linux系统编程（补充一）命令">Linux系统编程（补充一）命令</a><time datetime="2026-06-08T07:40:31.124Z" title="更新于 2026-06-08 15:40:31">2026-06-08</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div id="footer-wrap"><div class="copyright">&copy;2025 - 2026 By qinmoM</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.5</a></div><div class="footer_custom_text"><span>本网站所有功能仅用于个人技术学习与交流，非商业用途；<br>素材、源码仅供参考，若涉及侵权请联系作者删除</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/blog/js/utils.js"></script><script src="/blog/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/blog/js/search/local-search.js"></script></div></div></body></html>
