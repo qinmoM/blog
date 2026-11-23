@@ -1,0 +1,355 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>网络编程（五）应用层协议 | QinmoM's Blog</title><meta name="author" content="qinmoM"><meta name="copyright" content="qinmoM"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="B站：嵌入式-  tftp 简单文件传输协议 基于udp协议实现；不进行用户有效性认证。  传输模式 octet，二进制 netascll，文本模式  通信原理 读写请求：2 byte 操作码(1读&#x2F;2写) + n byte 文件名 + 1 byte ‘\0’ + n byte 模式(二进制&#x2F;文本) + 1 byte ‘\0’ + n byte 选项1 + 1 byte ‘\">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络编程（五）应用层协议">
+<meta property="og:url" content="https://qinmom.github.io/blog/2026/03/03/netApplicationLayerProtocols/index.html">
+<meta property="og:site_name" content="QinmoM&#39;s Blog">
+<meta property="og:description" content="B站：嵌入式-  tftp 简单文件传输协议 基于udp协议实现；不进行用户有效性认证。  传输模式 octet，二进制 netascll，文本模式  通信原理 读写请求：2 byte 操作码(1读&#x2F;2写) + n byte 文件名 + 1 byte ‘\0’ + n byte 模式(二进制&#x2F;文本) + 1 byte ‘\0’ + n byte 选项1 + 1 byte ‘\">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://qinmom.github.io/blog/img/043.jpg">
+<meta property="article:published_time" content="2026-03-03T12:21:08.000Z">
+<meta property="article:modified_time" content="2026-11-23T08:57:55.344Z">
+<meta property="article:author" content="qinmoM">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="网络">
+<meta property="article:tag" content="Protocol">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://qinmom.github.io/blog/img/043.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "网络编程（五）应用层协议",
+  "url": "https://qinmom.github.io/blog/2026/03/03/netApplicationLayerProtocols/",
+  "image": "https://qinmom.github.io/blog/img/043.jpg",
+  "datePublished": "2026-03-03T12:21:08.000Z",
+  "dateModified": "2026-11-23T08:57:55.344Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "qinmoM",
+      "url": "https://qinmom.github.io/blog"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/blog/img/favicon.png"><link rel="canonical" href="https://qinmom.github.io/blog/2026/03/03/netApplicationLayerProtocols/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/blog/css/index.css?v=5.7.2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.1/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        try {
+          const data = { value }
+
+          if (ttl != null) {
+            data.expiry = Date.now() + ttl * 86400000
+          }
+
+          localStorage.setItem(key, JSON.stringify(data))
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return
+
+        try {
+          const data = JSON.parse(itemStr)
+
+          if (data.expiry && Date.now() > data.expiry) {
+            localStorage.removeItem(key)
+            return
+          }
+
+          return data.value
+        } catch {
+          localStorage.removeItem(key)
+        }
+      }
+    }
+
+    const scriptCache = new Map()
+    const cssCache = new Map()
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => {
+        if (scriptCache.has(url)) {
+          return scriptCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+
+          script.src = url
+          script.async = true
+
+          for (const key in attr) {
+            script.setAttribute(key, attr[key])
+          }
+
+          script.onload = resolve
+          script.onerror = reject
+
+          document.head.appendChild(script)
+        })
+
+        scriptCache.set(url, promise)
+
+        return promise
+      },
+      getCSS: (url, id) => {
+        if (cssCache.has(url)) {
+          return cssCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const link = document.createElement('link')
+
+          link.rel = 'stylesheet'
+          link.href = url
+
+          if (id) {
+            link.id = id
+          }
+
+          link.onload = resolve
+          link.onerror = reject
+
+          document.head.appendChild(link)
+        })
+
+        cssCache.set(url, promise)
+
+        return promise
+      },
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+      const activateDarkMode = () => {
+        document.documentElement.dataset.theme = 'dark'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.dataset.theme = 'light'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: {"path":"/blog/search.json","preload":true,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":300,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '网络编程（五）应用层协议',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/blog/css/custom.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/blog/img/background.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/blog/img/IMG_20250630_143236.png" onerror="this.onerror=null;this.src='/blog/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">46</div></a><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">40</div></a><a href="/blog/categories/"><div class="headline">分类</div><div class="length-num">6</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/blog/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/blog/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/blog/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/blog/img/043.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/blog/"><span class="site-name">QinmoM's Blog</span></a><a class="nav-page-title" href="/blog/"><span class="site-name">网络编程（五）应用层协议</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/blog/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/blog/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/blog/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">网络编程（五）应用层协议</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-03T12:21:08.000Z" title="发表于 2026-03-03 20:21:08">2026-03-03</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-11-23T08:57:55.344Z" title="更新于 2026-11-23 16:57:55">2026-11-23</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/blog/categories/%E7%BD%91%E7%BB%9C/">网络</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1250</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>6 分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+<p>B站：嵌入式-</p>
+</blockquote>
+<h1 id="tftp"><a href="#tftp" class="headerlink" title="tftp"></a>tftp</h1><ul>
+<li>简单文件传输协议</li>
+<li>基于udp协议实现；不进行用户有效性认证。</li>
+</ul>
+<h2 id="传输模式"><a href="#传输模式" class="headerlink" title="传输模式"></a>传输模式</h2><ul>
+<li>octet，二进制</li>
+<li>netascll，文本模式</li>
+</ul>
+<h2 id="通信原理"><a href="#通信原理" class="headerlink" title="通信原理"></a>通信原理</h2><ul>
+<li>读写请求：<br>2 byte 操作码(1读&#x2F;2写) + n byte 文件名 + 1 byte ‘\0’ + n byte 模式(二进制&#x2F;文本) + 1 byte ‘\0’ + n byte 选项1 + 1 byte ‘\0’ + n byte 值1 + 1 byte ‘\0’ + … + n byte 选项n + 1 byte ‘\0’ + n byte 值n + 1 byte ‘\0’</li>
+<li>数据包：<br>2 byte 操作码(3) + 2 byte 块编号 + &lt;&#x3D;512 byte 数据</li>
+<li>ACK包：<br>2 byte 操作码(4) + 2 byte 块编号</li>
+<li>错误：<br>2 byte 操作码(5) + 2 byte 差错码 + n byte 差错信息 + 1 byte ‘\0’</li>
+<li>OACK：<br>2 byte 操作码(6) + n byte 选项1 + 1 byte ‘\0’ + n byte 值1 + 1 byte ‘\0’ + … + n byte 选项n + 1 byte ‘\0’ + n byte 值n + 1 byte ‘\0’</li>
+</ul>
+<h3 id="选项"><a href="#选项" class="headerlink" title="选项"></a>选项</h3><ul>
+<li>tsize：文件大小，读请求不需要写，服务器返回OACK时附带文件大小；写请求则需要发送自己的文件大小。</li>
+<li>blksize：数据块大小（默认512），可修改为8~65464。</li>
+<li>timeout：设置超时时间，秒为单位。</li>
+</ul>
+<h2 id="通信流程"><a href="#通信流程" class="headerlink" title="通信流程"></a>通信流程</h2><h3 id="客户端流程"><a href="#客户端流程" class="headerlink" title="客户端流程"></a>客户端流程</h3><ul>
+<li>创建套接字。socket</li>
+<li>构建 读&#x2F;写 请求报文。sendto &#x2F; recvfrom</li>
+<li>打开要读取&#x2F;写入的本地文件。open</li>
+<li>收发循环：<ol>
+<li>收：<br>  recvfrom 并记录字节数。<br>  服务器应答出错则退出。<br>  sendto 给服务器回应ACK。<br>  判断字节数是否小于 固定块512 + 操作码 2 + 块号 2 ，小于表示完成，退出循环。</li>
+<li>发：<br>  sendto 给服务器发数据并记录字节数。<br>  recvfrom 服务器的ACK应答。<br>  服务器应答出错则退出。<br>  判断字节数是否小于 固定块512 + 操作码 2 + 块号 2 ，小于表示完成，退出循环。</li>
+</ol>
+</li>
+<li>关闭。</li>
+</ul>
+<h4 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h4><ul>
+<li>tftp格式—接收x.x.x.x服务器的69号端口管理的文件。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/socket.h&gt;</span> <span class="comment">// sockaddr_in</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;arpa/inet.h&gt;</span> <span class="comment">// htonl ...</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span> <span class="comment">// close, read, write ...</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;strings.h&gt;</span> <span class="comment">// bzero</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;fcntl.h&gt;</span> <span class="comment">// open</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> <span class="type">const</span> *argv[])</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="number">2</span> != argc)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;bin/project fileName.\n&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// create a UDP socket</span></span><br><span class="line">    <span class="type">int</span> sockfd = socket(AF_INET, SOCK_DGRAM, <span class="number">0</span>);</span><br><span class="line">    <span class="comment">// determine whether the creation was successful</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="number">-1</span> == sockfd) <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;completed the creation of sockfd.\n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// server socket</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">ser_addr</span>;</span></span><br><span class="line">    bzero(&amp;ser_addr, <span class="keyword">sizeof</span>(ser_addr));</span><br><span class="line">    ser_addr.sin_family = AF_INET;</span><br><span class="line">    ser_addr.sin_port = htons(<span class="number">69</span>);</span><br><span class="line">    <span class="comment">// determine whether creation was successful</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="number">1</span> != inet_pton(AF_INET, <span class="string">&quot;x.x.x.x&quot;</span>, &amp;ser_addr.sin_addr.s_addr))</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;completed addr.\n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// open the test file in write-only</span></span><br><span class="line">    <span class="type">char</span> local_path[<span class="number">1000</span>] = <span class="string">&quot;&quot;</span>;</span><br><span class="line">    <span class="type">int</span> tempLen = <span class="built_in">sprintf</span>(local_path, <span class="string">&quot;../data/recv/%s&quot;</span>, argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="type">int</span> filefd = open(local_path, O_WRONLY | O_CREAT, <span class="number">0666</span>);</span><br><span class="line">    <span class="comment">// determine whether the open was successful</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="number">-1</span> == filefd) <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// build download message</span></span><br><span class="line">    <span class="type">char</span> cmd[<span class="number">512</span>] = <span class="string">&quot;&quot;</span>;</span><br><span class="line">    <span class="type">int</span> fullLen = <span class="built_in">sprintf</span>(cmd, <span class="string">&quot;%c%c%s%c%s%c&quot;</span>, <span class="number">0</span>, <span class="number">1</span>, argv[<span class="number">1</span>], <span class="number">0</span>, <span class="string">&quot;octet&quot;</span>, <span class="number">0</span>);</span><br><span class="line">    <span class="comment">// send message</span></span><br><span class="line">    sendto(sockfd, cmd, fullLen, <span class="number">0</span>, (<span class="keyword">struct</span> sockaddr *)&amp;ser_addr, <span class="keyword">sizeof</span>(ser_addr));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// package number</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> pack_num = <span class="number">1</span>;</span><br><span class="line">    <span class="comment">// ACK package</span></span><br><span class="line">    <span class="type">char</span> ack[<span class="number">4</span>] = <span class="string">&quot;&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">from_addr</span>;</span></span><br><span class="line">        <span class="type">socklen_t</span> from_len = <span class="keyword">sizeof</span>(from_addr);</span><br><span class="line">        <span class="type">char</span> buf[<span class="number">1500</span>] = <span class="string">&quot;&quot;</span>;</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> len = recvfrom(sockfd, buf, <span class="keyword">sizeof</span>(buf), <span class="number">0</span>, (<span class="keyword">struct</span> sockaddr *)&amp;from_addr, &amp;from_len);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (<span class="number">5</span> == buf[<span class="number">1</span>]) <span class="comment">// error package</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;recv error message.\n&quot;</span>);</span><br><span class="line">            close(sockfd);</span><br><span class="line">            close(filefd);</span><br><span class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (<span class="number">3</span> == buf[<span class="number">1</span>]) <span class="comment">// data package</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// determine whether the correct number has been received</span></span><br><span class="line">            <span class="keyword">if</span> (pack_num == ntohs(*(<span class="type">unsigned</span> <span class="type">short</span> *)(buf + <span class="number">2</span>)))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="comment">// package number</span></span><br><span class="line">                pack_num += <span class="number">1</span>;</span><br><span class="line">                <span class="comment">// write to the disk file</span></span><br><span class="line">                write(filefd, buf + <span class="number">4</span>, len - <span class="number">4</span>);</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;%d number package has been received.\n&quot;</span>, pack_num - <span class="number">1</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// send ACK package</span></span><br><span class="line">            ack[<span class="number">0</span>] = <span class="number">0</span>;</span><br><span class="line">            ack[<span class="number">1</span>] = <span class="number">4</span>;</span><br><span class="line">            ack[<span class="number">2</span>] = buf[<span class="number">2</span>];</span><br><span class="line">            ack[<span class="number">3</span>] = buf[<span class="number">3</span>];</span><br><span class="line">            sendto(sockfd, ack, <span class="keyword">sizeof</span>(ack), <span class="number">0</span>, (<span class="keyword">struct</span> sockaddr *)&amp;from_addr, from_len);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// determine whether all has been received.</span></span><br><span class="line">            <span class="keyword">if</span> (len &lt; <span class="number">516</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;complete all.\n&quot;</span>);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;other format message\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// close the socket and disk file</span></span><br><span class="line">    close(filefd);</span><br><span class="line">    close(sockfd);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="服务器流程"><a href="#服务器流程" class="headerlink" title="服务器流程"></a>服务器流程</h3><ul>
+<li>…</li>
+</ul>
+<h3 id="流程总结"><a href="#流程总结" class="headerlink" title="流程总结"></a>流程总结</h3><ul>
+<li>服务器在固定端口等待客户端请求。</li>
+<li>服务器批准请求时，会创建一个新线程使用临时端口通信。</li>
+<li>数据包的编号每次+1（从1开始：当请求使用选项时，服务器临时端口会回传一个OACK，此时回复的ACK需要 0 表示块编号未开始）</li>
+<li>每个数据包都需要得到ack回应，未收到则重新发送。</li>
+<li>长度以512传输。</li>
+<li>小于512表示传输完毕。</li>
+</ul>
+<h1 id="http"><a href="#http" class="headerlink" title="http"></a>http</h1><blockquote>
+<p>基于tcp的超文本传输协议。<br>用于浏览器与服务器的传递。</p>
+</blockquote>
+<ul>
+<li>支持c&#x2F;s架构。</li>
+<li>简单快速：客户端向服务器请求时，只传送请求方式和路径，平时使用GET，PIST。</li>
+<li>无连接：限制每次只处理一个请求。</li>
+<li>无状态：如果后续要处理前面的信息，必须重新传导致每次连接传输的数据变大。</li>
+</ul>
+<h2 id="传输模式-1"><a href="#传输模式-1" class="headerlink" title="传输模式"></a>传输模式</h2><ul>
+<li>字节流传输。</li>
+</ul>
+<h2 id="通信原理-1"><a href="#通信原理-1" class="headerlink" title="通信原理"></a>通信原理</h2><ul>
+<li>客户端请求：<br>method(GET &#x2F; POST) + [空格] + 路径(&#x2F;index.html) + [空格] + 版本(HTTP&#x2F;1.1) + [\r\n]<br>header(键 + [冒号] + [空格] + 值) + [\r\n]<br>header(键 + [冒号] + [空格] + 值) + [\r\n]<br>…<br>[\r\n]<br>body(数据)</li>
+<li>服务器回应：<br>版本(HTTP&#x2F;1.1) + 状态码(200 &#x2F; 404) + 状态码描述(OK &#x2F; Not Found)<br>header(键 + [冒号] + [空格] + 值) + [\r\n]（Content-Length: 127）<br>header(键 + [冒号] + [空格] + 值) + [\r\n]<br>…</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://qinmom.github.io/blog">qinmoM</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://qinmom.github.io/blog/2026/03/03/netApplicationLayerProtocols/">https://qinmom.github.io/blog/2026/03/03/netApplicationLayerProtocols/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://qinmom.github.io/blog" target="_blank">QinmoM's Blog</a>！</span></div><div class="post-copyright__cover"><span class="post-copyright-meta"><i class="fas fa-image fa-fw"></i>封面链接：</span><span class="post-copyright-info"><a href="https://www.pixiv.net/artworks/77167111" target="_blank" rel="noopener noreferrer">点击跳转</a></span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/Linux/">Linux</a><a class="post-meta__tags" href="/blog/tags/%E7%BD%91%E7%BB%9C/">网络</a><a class="post-meta__tags" href="/blog/tags/Protocol/">Protocol</a></div><div class="post-share"><div class="social-share" data-image="/blog/img/043.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/blog/2026/03/03/netTransportLayerProtocols/" title="网络编程（四）传输层协议"><img class="cover" src="/blog/img/042.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-03</div><div class="info-item-2">网络编程（四）传输层协议</div></div><div class="info-2"><div class="info-item-1"> B站：满目星河x、嵌入式-  传输方式类型 单播，都支持 多播，ipv4可选，ipv6支持 广播，ipv4支持，ipv6不支持 任播，ipv4支持但不广使用，ipv6支持  广播 注：广播千万不要 while 1 循环，由于广播地址自己也会收到，所以在网络层广播会直接返回，不经过链路层，导致即使拔掉网线也会一直发送。  特点 同一子网所有主机都必须处理 受限于局域网 音视频等高速率运作会带来较大负担  地址 定向广播地址：主机id全1，如xxx.xxx.xxx.255&#x2F;24 …路由器通常不转发该地址。 受限广播地址：255.255.255.255路由器从不转发该地址  多播 对同一分组发送消息。 分组表示为 特殊ip。  原理 基于mac设备不完备硬件过滤，后再基于ip的完备软件过滤。 每个主机只能将自己加入多播组。  特点 多播地址标识一组接口 可用于广域网 ipv4中，多播可选  地址 ipv4的D类地址为多播地址，如：224.0.0.1 … mac地址前25位（mac前一半加一bit）固定为：01 00 5e + 0(1bit) 后23位为D类ip的后23位（省...</div></div></div></a><a class="pagination-related" href="/blog/2025/12/01/netConceptAndLayering/" title="网络编程（一）概念与分层"><img class="cover" src="/blog/img/039.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-01</div><div class="info-item-2">网络编程（一）概念与分层</div></div><div class="info-2"><div class="info-item-1">概念网络节点路由器、交换机等。 路由网络通信路径。 分组交换概述 传输信息时，会将信息分成小块传输。（因为有最大传输限制MTU，默认1500字节） 分组和重组都发生在物理主机上。 一个分组系统中，每个组是定长的。 首部：每个分组都有一个首部，存储地址信息，分组的位置信息等。  交换方式—存储转发 存储：节点收到分组时，先存储下来。 转发：检查其首部，按照首部的目的地址，找到合适的节点转发出去。  TCP&#x2F;IP协议族TCP&#x2F;IP协议族是众多网络协议的统称。 七层模型 OSI 物理层：定义物理设备标准，如网线接口类型，光纤类型。主要作用是传输比特数据，及0和1。 数据链路层：收发数据。（mac地址） 网络层：两主机间提供路径选择，及ip。 传输层：port层，区分数据发送到哪个进程。 会话层：建立连接。 表示层：解码。 应用层：程序。  四层模型 tcp&#x2F;ip 链路层：mac到mac。ARP地址解析协议（ip转mac）、RARP反向地址解析协议（mac找ip） 网络层：主机到主机。ICMP因特网控制报文协议、IP因特网互联协议、IGMP因特网组管理协议 ...</div></div></div></a><a class="pagination-related" href="/blog/2026/01/26/netMacAndIp/" title="网络编程（二）mac地址与ip地址"><img class="cover" src="/blog/img/040.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-26</div><div class="info-item-2">网络编程（二）mac地址与ip地址</div></div><div class="info-2"><div class="info-item-1"> b站：满目星河x   传输信息时，信息先通过ip地址地位网络目标，再通过mac地址定义局域网下的主机，再由不同端口传输给不同应用。  mac地址 表示网卡的id，理论全球唯一。 一般用来表示主机的id，物理地址，不会变动。 由12位16进制构成，共48bit。  ip地址 标识主机的id，此id为虚拟id，会改变。 子网掩码用于标识主机和子网，必须前面全是1，后面全是0。  ipv4 32位bit构成（4字节）。 因其位数限制，通常作为局域网ip。 一个ip分为子网id和主机id，并且需要配合 子网掩码netmask 看，其中网段地址为 子网id 后续全0，广播地址为 子网id 后续全1：示例：  ip：              10.    1.    1.    2  子网掩码：  255.255.255.    0其中连续1覆盖的位为子网id：10.1.1连续的0覆盖的为主机id：2网段地址：10.1.1.0广播地址：10.1.1.255注： 由于 0 和 255 已经是 网段  和 广播地址 ，所以 主机id 不能为 0 或 255。 此 id 也可写为 10.1.1...</div></div></div></a><a class="pagination-related" href="/blog/2026/02/11/netSocket/" title="网络编程（三）Socket套接字"><img class="cover" src="/blog/img/041.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-11</div><div class="info-item-2">网络编程（三）Socket套接字</div></div><div class="info-2"><div class="info-item-1"> b站：满目星河x  概念 同主机下，通信方式较多：虚拟存储映射、管道、信号、消息队列… 不同主机下，通信方式为socket。 与其名称相同，socket需要两台主机成对出现，各自带有一个读和写的缓冲区。 需要进行主机序和网络序的转换（大小端的转换）。  网络设计模式browser&#x2F;server浏览器与服务器 计算需要上传到服务器。 性能较差。 协议依赖http。 客户端安全。 开发周期短。  cilent&#x2F;server 客户端与服务器 分为面向连接（TCP）和面向无连接（UDP）。 大部分计算可以在本地完成。 性能较好。 协议灵活。 客户端容易篡改程序。 开发周期长。  字节序 数据在内存中的存储顺序。 只有大于等于两个字节的数据需要转换。  大端 也称为网络字节序。 高位放在低地址处，如0x123456，12是高位在低地址处，56是低位在高地址处。  小端 高位放在高地址处，如0x123456，12是高位在高地址处，56是低位在低地址处。 更符合计算机的处理逻辑，简化计算。  网络通信结构体应用层需解决的三大问题 协议 ip 端口  ipv4套接字结构体1...</div></div></div></a><a class="pagination-related" href="/blog/2025/12/08/linuxThreadSync/" title="Linux系统编程（十三）线程同步"><img class="cover" src="/blog/img/035.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-08</div><div class="info-item-2">Linux系统编程（十三）线程同步</div></div><div class="info-2"><div class="info-item-1"> b站：满目星何x  互斥锁同步与互斥概念互斥 散步在不同任务中的若干片段，当某个任务运行其中一个片段时，其他任务就不能运行他们的任一片段。 即：一个公共资源同一时刻只能被同一个进程或线程使用。  同步 散步在不同任务中的多个片段，他们的运行必须按照某种次序来。如A任务依赖于B任务产生的数据。 即：同步是一种更严苛的互斥，他们的运行次序必须依赖于特定任务。  互斥锁 访问共享资源后，临界区域前，对互斥锁进行加锁。 访问完成后释放锁。 加锁后，试图再次对互斥锁加锁的线程会被阻塞。  pthread_mutex_init123456789101112131415#include &lt;pthread.h&gt;// 初始化一个互斥锁（动态）int pthread_mutex_init(pthread_mutex_t *restrict mutex,	const pthread_mutexattr_t *restrict attr);/*参数：	mutex : 互斥锁地址	attr : 设置互斥量属性，通常写NULL返回值：	成功 : 成功申请的锁默认是打开的	失败 : 非0错误码*...</div></div></div></a><a class="pagination-related" href="/blog/2025/12/07/linuxThread/" title="Linux系统编程（十二）线程"><img class="cover" src="/blog/img/034.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-07</div><div class="info-item-2">Linux系统编程（十二）线程</div></div><div class="info-2"><div class="info-item-1"> b站：满目星何x   注gcc编译时需加入参数-lpthread或-pthread。  概念 线程是一个轻量级的进程，也有PCB，Linux下线程的本质依然是进程。 进程是系统分配资源的最小单位：保存在硬盘空间，会在内存空间形成一个独立的个体，有自己的地址。操作系统以进程为单位分配资源。 线程是系统调度的最小单位：进程的构成一定会包含线程的所有结构，即进程中最少有一个线程，或进程是线程的一个容器。 线程是CPU委派任务的基本单位，本身基本不包含系统资源（除程序计数器、栈等）；它可以与同属一个进程的其他线程贡献全部资源。 进程本身不进行调用，只做资源分配，调度的事情是交给内部的线程完成的。 进程可以蜕变为线程。 无论是创建进程的fork还是创建线程的thread_create，低层实现都是调用一个内核函数clone。复制对方的地址就是进程，共享对方的地址就是线程。  NPTL native POSIX thread library。Linux线程的一个新实现，符合POSIX要求并且比LinuxThreads更具性能和稳定。  LWP 用户级线程（NPTL）会绑定到LWP（内核轻量...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/blog/img/IMG_20250630_143236.png" onerror="this.onerror=null;this.src='/blog/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">qinmoM</div><div class="author-info-description">数据结构/C++/Linux/net/other</div><div class="site-data"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">46</div></a><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">40</div></a><a href="/blog/categories/"><div class="headline">分类</div><div class="length-num">6</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/qinmoM"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">欢迎来到我的技术博客！<br>目前专注于 c++ / Linux / 网络 / 项目实践<br>email - qinmo666@outlook.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#tftp"><span class="toc-number">1.</span> <span class="toc-text">tftp</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%A0%E8%BE%93%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.1.</span> <span class="toc-text">传输模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9A%E4%BF%A1%E5%8E%9F%E7%90%86"><span class="toc-number">1.2.</span> <span class="toc-text">通信原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%89%E9%A1%B9"><span class="toc-number">1.2.1.</span> <span class="toc-text">选项</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9A%E4%BF%A1%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.</span> <span class="toc-text">通信流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.1.</span> <span class="toc-text">客户端流程</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.3.1.1.</span> <span class="toc-text">示例</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.2.</span> <span class="toc-text">服务器流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B5%81%E7%A8%8B%E6%80%BB%E7%BB%93"><span class="toc-number">1.3.3.</span> <span class="toc-text">流程总结</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#http"><span class="toc-number">2.</span> <span class="toc-text">http</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%A0%E8%BE%93%E6%A8%A1%E5%BC%8F-1"><span class="toc-number">2.1.</span> <span class="toc-text">传输模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9A%E4%BF%A1%E5%8E%9F%E7%90%86-1"><span class="toc-number">2.2.</span> <span class="toc-text">通信原理</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/blog/2026/03/03/netApplicationLayerProtocols/" title="网络编程（五）应用层协议"><img src="/blog/img/043.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="网络编程（五）应用层协议"/></a><div class="content"><a class="title" href="/blog/2026/03/03/netApplicationLayerProtocols/" title="网络编程（五）应用层协议">网络编程（五）应用层协议</a><time datetime="2026-11-23T08:57:55.344Z" title="更新于 2026-11-23 16:57:55">2026-11-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2026/03/03/netTransportLayerProtocols/" title="网络编程（四）传输层协议"><img src="/blog/img/042.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="网络编程（四）传输层协议"/></a><div class="content"><a class="title" href="/blog/2026/03/03/netTransportLayerProtocols/" title="网络编程（四）传输层协议">网络编程（四）传输层协议</a><time datetime="2026-11-23T08:50:29.443Z" title="更新于 2026-11-23 16:50:29">2026-11-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2025/11/26/linuxSystemCall2/" title="Linux系统编程（八）系统调用（2）"><img src="/blog/img/030.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Linux系统编程（八）系统调用（2）"/></a><div class="content"><a class="title" href="/blog/2025/11/26/linuxSystemCall2/" title="Linux系统编程（八）系统调用（2）">Linux系统编程（八）系统调用（2）</a><time datetime="2026-11-23T08:50:05.539Z" title="更新于 2026-11-23 16:50:05">2026-11-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2026/02/11/netSocket/" title="网络编程（三）Socket套接字"><img src="/blog/img/041.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="网络编程（三）Socket套接字"/></a><div class="content"><a class="title" href="/blog/2026/02/11/netSocket/" title="网络编程（三）Socket套接字">网络编程（三）Socket套接字</a><time datetime="2026-11-22T12:47:05.838Z" title="更新于 2026-11-22 20:47:05">2026-11-22</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2026/01/26/netMacAndIp/" title="网络编程（二）mac地址与ip地址"><img src="/blog/img/040.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="网络编程（二）mac地址与ip地址"/></a><div class="content"><a class="title" href="/blog/2026/01/26/netMacAndIp/" title="网络编程（二）mac地址与ip地址">网络编程（二）mac地址与ip地址</a><time datetime="2026-11-22T12:38:23.292Z" title="更新于 2026-11-22 20:38:23">2026-11-22</time></div></div></div></div></div></div></main><footer id="footer" style="background: transparent;"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By qinmoM</span></div><div class="footer_custom_text"><span>本网站所有功能仅用于个人技术学习与交流，非商业用途；<br>素材、源码仅供参考，若涉及侵权请联系作者删除</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/blog/js/utils.js?v=5.7.2"></script><script src="/blog/js/main.js?v=5.7.2"></script><div class="js-pjax"><script>(() => {
+  const changeScriptToMath = article => {
+    article.querySelectorAll('script[type^="math/tex"]').forEach(el => {
+      const display = /mode=display/.test(el.type)
+      const node = document.createElement(display ? 'div' : 'span')
+      node.textContent = display
+        ? `$$${el.textContent}$$`
+        : `$${el.textContent}$`
+      el.parentNode.replaceChild(node, el)
+    })
+  }
+
+  const loadMathjax = () => {
+    const article = document.getElementById('article-container')
+    if (!article || article.querySelector('.hbe-container')) return
+    changeScriptToMath(article)
+
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem',
+            'ui/lazy'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          lazyMargin: '200px',
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.typesetClear()
+      MathJax.typesetPromise([ article ])
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  if (window.pjax) loadMathjax()
+  else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadMathjax)
+  else loadMathjax()
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/blog/js/search/local-search.js?v=5.7.2"></script></div></div></body></html>
